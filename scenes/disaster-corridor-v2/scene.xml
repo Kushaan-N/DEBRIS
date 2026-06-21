@@ -2,7 +2,7 @@
 
   <compiler autolimits="true" angle="radian"/>
 
-  <option gravity="0 0 -9.81" timestep="0.004" integrator="euler"/>
+  <option gravity="0 0 -9.81" timestep="0.002" integrator="implicitfast"/>
 
   <default>
     <geom condim="3" friction="0.9 0.005 0.001" contype="1" conaffinity="1"/>
@@ -406,9 +406,9 @@
        ACTUATORS
        ================================================================ -->
   <actuator>
-    <velocity name="move_x" joint="agent_root" gear="1 0 0 0 0 0" kv="250"/>
-    <velocity name="move_y" joint="agent_root" gear="0 1 0 0 0 0" kv="250"/>
-    <velocity name="turn_z" joint="agent_root" gear="0 0 0 0 0 1" kv="60"/>
+    <velocity name="move_x" joint="agent_root" gear="1 0 0 0 0 0" kv="4000"/>
+    <velocity name="move_y" joint="agent_root" gear="0 1 0 0 0 0" kv="4000"/>
+    <velocity name="turn_z" joint="agent_root" gear="0 0 0 0 0 1" kv="800"/>
   </actuator>
 
   <!-- ================================================================
@@ -417,51 +417,51 @@
   <sensor>
 
     <!-- Agent state -->
-    <framepos    name="agent_pos"     body="agent"/>
-    <framelinvel name="agent_vel"     body="agent"/>
-    <framexaxis  name="agent_facing"  body="agent"/>
+    <framepos    name="agent_pos"     objtype="body" objname="agent"/>
+    <framelinvel name="agent_vel"     objtype="body" objname="agent"/>
+    <framexaxis  name="agent_facing"  objtype="body" objname="agent"/>
     <touch       name="contact_agent" site="agent_touch_site"/>
 
     <!-- Primary debris positions (obs [12:27]) -->
-    <framepos name="debris_p0_pos" body="debris_primary_0"/>
-    <framepos name="debris_p1_pos" body="debris_primary_1"/>
-    <framepos name="debris_p2_pos" body="debris_primary_2"/>
-    <framepos name="debris_p3_pos" body="debris_primary_3"/>
-    <framepos name="debris_p4_pos" body="debris_primary_4"/>
+    <framepos name="debris_p0_pos" objtype="body" objname="debris_primary_0"/>
+    <framepos name="debris_p1_pos" objtype="body" objname="debris_primary_1"/>
+    <framepos name="debris_p2_pos" objtype="body" objname="debris_primary_2"/>
+    <framepos name="debris_p3_pos" objtype="body" objname="debris_primary_3"/>
+    <framepos name="debris_p4_pos" objtype="body" objname="debris_primary_4"/>
 
-    <!-- Primary debris velocities — bridge extracts vz [27:32], vx [52:57], vy [57:62] -->
-    <framelinvel name="debris_p0_vel" body="debris_primary_0"/>
-    <framelinvel name="debris_p1_vel" body="debris_primary_1"/>
-    <framelinvel name="debris_p2_vel" body="debris_primary_2"/>
-    <framelinvel name="debris_p3_vel" body="debris_primary_3"/>
-    <framelinvel name="debris_p4_vel" body="debris_primary_4"/>
+    <!-- Primary debris velocities: bridge extracts vz [27:32], vx [52:57], vy [57:62] -->
+    <framelinvel name="debris_p0_vel" objtype="body" objname="debris_primary_0"/>
+    <framelinvel name="debris_p1_vel" objtype="body" objname="debris_primary_1"/>
+    <framelinvel name="debris_p2_vel" objtype="body" objname="debris_primary_2"/>
+    <framelinvel name="debris_p3_vel" objtype="body" objname="debris_primary_3"/>
+    <framelinvel name="debris_p4_vel" objtype="body" objname="debris_primary_4"/>
 
     <!-- Scatter debris positions (obs [32:47]) -->
-    <framepos name="debris_s0_pos" body="debris_scatter_0"/>
-    <framepos name="debris_s1_pos" body="debris_scatter_1"/>
-    <framepos name="debris_s2_pos" body="debris_scatter_2"/>
-    <framepos name="debris_s3_pos" body="debris_scatter_3"/>
-    <framepos name="debris_s4_pos" body="debris_scatter_4"/>
+    <framepos name="debris_s0_pos" objtype="body" objname="debris_scatter_0"/>
+    <framepos name="debris_s1_pos" objtype="body" objname="debris_scatter_1"/>
+    <framepos name="debris_s2_pos" objtype="body" objname="debris_scatter_2"/>
+    <framepos name="debris_s3_pos" objtype="body" objname="debris_scatter_3"/>
+    <framepos name="debris_s4_pos" objtype="body" objname="debris_scatter_4"/>
 
-    <!-- Scatter debris velocities — bridge extracts vz for obs [47:52] -->
-    <framelinvel name="debris_s0_vel" body="debris_scatter_0"/>
-    <framelinvel name="debris_s1_vel" body="debris_scatter_1"/>
-    <framelinvel name="debris_s2_vel" body="debris_scatter_2"/>
-    <framelinvel name="debris_s3_vel" body="debris_scatter_3"/>
-    <framelinvel name="debris_s4_vel" body="debris_scatter_4"/>
+    <!-- Scatter debris velocities: bridge extracts vz for obs [47:52] -->
+    <framelinvel name="debris_s0_vel" objtype="body" objname="debris_scatter_0"/>
+    <framelinvel name="debris_s1_vel" objtype="body" objname="debris_scatter_1"/>
+    <framelinvel name="debris_s2_vel" objtype="body" objname="debris_scatter_2"/>
+    <framelinvel name="debris_s3_vel" objtype="body" objname="debris_scatter_3"/>
+    <framelinvel name="debris_s4_vel" objtype="body" objname="debris_scatter_4"/>
 
-    <!-- Ceiling tile positions — bridge derives broken flags (obs [52:57]) -->
-    <framepos name="ceil_0pos" body="ceil_fall_0"/>
-    <framepos name="ceil_1pos" body="ceil_fall_1"/>
-    <framepos name="ceil_2pos" body="ceil_fall_2"/>
-    <framepos name="ceil_3pos" body="ceil_fall_3"/>
-    <framepos name="ceil_4pos" body="ceil_fall_4"/>
+    <!-- Ceiling tile positions: bridge derives broken flags (obs [52:57]) -->
+    <framepos name="ceil_0pos" objtype="body" objname="ceil_fall_0"/>
+    <framepos name="ceil_1pos" objtype="body" objname="ceil_fall_1"/>
+    <framepos name="ceil_2pos" objtype="body" objname="ceil_fall_2"/>
+    <framepos name="ceil_3pos" objtype="body" objname="ceil_fall_3"/>
+    <framepos name="ceil_4pos" objtype="body" objname="ceil_fall_4"/>
 
-    <!-- Wall chunk positions — used by bridge for collapse state tracking -->
-    <framepos name="wall_L0_pos" body="wall_chunk_L0"/>
-    <framepos name="wall_L1_pos" body="wall_chunk_L1"/>
-    <framepos name="wall_R0_pos" body="wall_chunk_R0"/>
-    <framepos name="wall_R1_pos" body="wall_chunk_R1"/>
+    <!-- Wall chunk positions: used by bridge for collapse state tracking -->
+    <framepos name="wall_L0_pos" objtype="body" objname="wall_chunk_L0"/>
+    <framepos name="wall_L1_pos" objtype="body" objname="wall_chunk_L1"/>
+    <framepos name="wall_R0_pos" objtype="body" objname="wall_chunk_R0"/>
+    <framepos name="wall_R1_pos" objtype="body" objname="wall_chunk_R1"/>
 
   </sensor>
 
