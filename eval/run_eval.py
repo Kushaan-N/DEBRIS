@@ -19,14 +19,37 @@ import numpy as np
 
 MAX_STEPS = 2000
 
-# Observation indices per contract (OBS_DIM=59)
+# Observation indices per contract (OBS_DIM=71)
 IDX_GOAL_REL = slice(9, 12)
-IDX_FIRE_FLAG = 57
-IDX_COLLISION_FLAG = 58
+IDX_FIRE_FLAG = 69
+IDX_COLLISION_FLAG = 70
+
+
+def _bridge_reset(bridge) -> dict:
+    """Reset the bridge and return an obs dict with 'observation/state'."""
+    if hasattr(bridge, "reset_sync"):
+        # DisasterBridgeV2: reset_sync() re-initialises episode state;
+        # get_observation() returns (obs_dict, done).
+        bridge.reset_sync()
+        obs_dict, _ = bridge.get_observation()
+        return obs_dict
+    result = bridge.reset()
+    return result
+
+
+def _bridge_step(bridge, action) -> tuple[dict, float, bool, dict]:
+    """Step the bridge and return (obs_dict, reward, done, info)."""
+    if hasattr(bridge, "get_observation"):
+        # DisasterBridgeV2: step() updates internal state and returns None;
+        # get_observation() returns (obs_dict, done).
+        bridge.step(action)
+        obs_dict, done = bridge.get_observation()
+        return obs_dict, 0.0, done, {}
+    return bridge.step(action)
 
 
 def run_episode(bridge, agent, max_steps: int = MAX_STEPS) -> dict:
-    obs_dict = bridge.reset()
+    obs_dict = _bridge_reset(bridge)
     agent.model.reset()
 
     collisions = 0
@@ -39,7 +62,7 @@ def run_episode(bridge, agent, max_steps: int = MAX_STEPS) -> dict:
         action_raw = agent.model.infer(adapted)
         action = agent.adapter.adapt_action(action_raw, spaces=None)
 
-        obs_dict, _reward, done, _info = bridge.step(action.flatten())
+        obs_dict, _reward, done, _info = _bridge_step(bridge, action.flatten())
 
         state = obs_dict["observation/state"]
         if state[IDX_COLLISION_FLAG] > 0.5:
