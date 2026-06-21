@@ -1,8 +1,21 @@
+import asyncio
 import json
+import os
 import numpy as np
 from pathlib import Path
 
-from hud.environment.robot import RobotBridge, ThreadSimRunner
+try:
+    from hud.environment.robot import RobotBridge, ThreadSimRunner
+    _HUD_AVAILABLE = True
+except ImportError:
+    _HUD_AVAILABLE = False
+    RobotBridge = object
+    ThreadSimRunner = None
+
+SCENE_DIR = (
+    Path(os.environ.get("DEBRIS_ROOT", str(Path(__file__).parent.parent)))
+    / "scenes" / "disaster-corridor-v2"
+)
 
 OBS_DIM = 71
 
@@ -19,7 +32,7 @@ _WELD_NAME_TO_IDX = {
 }
 
 
-class DisasterBridgeV2(RobotBridge):
+class DisasterBridgeV2(RobotBridge if _HUD_AVAILABLE else object):
 
     def __init__(self, stage: str = "full_chaos", seed: int | None = None):
         meta_path = Path(__file__).parent.parent / "scenes" / "disaster-corridor-v2" / "metadata.json"
@@ -69,7 +82,22 @@ class DisasterBridgeV2(RobotBridge):
         self._reset_episode_state()
         self._reset_collapse_state()
 
-        super().__init__(sim_runner=ThreadSimRunner())
+        if _HUD_AVAILABLE:
+            super().__init__(sim_runner=ThreadSimRunner())
+
+        # _sim is set by HUD serve loop in eval mode.
+        # In standalone/training mode stays None; reset()/step() guard on it.
+        self._sim = None
+        self._standalone = not _HUD_AVAILABLE
+
+        # Try to initialize MuJoCo sim directly for standalone training.
+        # Falls back gracefully to _sim=None (zero obs) if unavailable.
+        try:
+            from sim.bridge import SimBridge
+            self._sim = SimBridge(scene_id=SCENE_DIR.name, viewer=False)
+            print("[DisasterBridgeV2] MuJoCo sim initialized directly")
+        except Exception as e:
+            print(f"[DisasterBridgeV2] sim not available: {e} — using mock obs")
 
     # ------------------------------------------------------------------
     # Internal state helpers
@@ -82,6 +110,7 @@ class DisasterBridgeV2(RobotBridge):
         self.success                  = False
         self.terminated               = False
         self.was_in_contact_last_step = False   # edge detection for collision penalty
+        self.last_reward              = 0.0
 
     def _reset_collapse_state(self):
         self.broken_welds        = set()
@@ -111,11 +140,17 @@ class DisasterBridgeV2(RobotBridge):
             n_primary = self._stage_config["active_primary_debris"]
             for i in range(n_primary):
                 self._sim.set_body_qpos(self.PRIMARY_DEBRIS[i], self._random_debris_spawn(primary=True))
+            # Park inactive primary debris underground so they don't fall into the scene.
+            for i in range(n_primary, len(self.PRIMARY_DEBRIS)):
+                self._sim.set_body_qpos(self.PRIMARY_DEBRIS[i], self._park_pos())
 
             n_scatter = self._stage_config["active_scatter_debris"]
             for i in range(n_scatter):
                 self._sim.set_body_qpos(self.SCATTER_DEBRIS[i], self._random_debris_spawn(primary=False))
                 self._sim.set_body_qvel(self.SCATTER_DEBRIS[i], self._random_scatter_velocity())
+            # Park inactive scatter debris underground.
+            for i in range(n_scatter, len(self.SCATTER_DEBRIS)):
+                self._sim.set_body_qpos(self.SCATTER_DEBRIS[i], self._park_pos())
 
         await self._send_observation()
         return (
@@ -123,15 +158,28 @@ class DisasterBridgeV2(RobotBridge):
             "without being struck by falling debris, crumbling walls, or entering fire zones."
         )
 
+    def reset_sync(self, task_id: str = "", seed: int = 0):
+        """Synchronous reset for use in training loop without HUD."""
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(self.reset(task_id=task_id, seed=seed))
+        finally:
+            loop.close()
+
     def step(self, action) -> None:
+        if self._sim is None:
+            self.step_count += 1
+            if self.step_count >= self._episode_max_steps:
+                self.terminated = True
+            return
         action = np.clip(action, [-1.5, -1.0, -1.0], [1.5, 1.0, 1.0])
         self._sim.set_ctrl(action)
-        self._sim.step(n_substeps=5)
+        self._sim.step(n_substeps=10)
         self._last_raw = self._sim.get_sensor_data()
         self._update_collapse()
         self._respawn_debris()
         obs_dict, _ = self.get_observation()
-        self._compute_reward(obs_dict)
+        self.last_reward = self._compute_reward(obs_dict)
         self.step_count += 1
         if self.success or self.step_count >= self._episode_max_steps:
             self.terminated = True
@@ -323,6 +371,12 @@ class DisasterBridgeV2(RobotBridge):
 
     # ------------------------------------------------------------------
     # Private helpers
+
+    def _park_pos(self) -> np.ndarray:
+        """13-element qpos that places a body far outside the corridor and at rest.
+        Lateral offset avoids the infinite floor half-space (z<0 penetration);
+        bodies are parked at y=+200 so they never interact with the scene."""
+        return np.array([0.0, 200.0, 0.5, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
 
     def _pos_to_qpos(self, pos: np.ndarray) -> np.ndarray:
         """13-element body state: [x,y,z, qw,qx,qy,qz, vx,vy,vz, wx,wy,wz]"""
