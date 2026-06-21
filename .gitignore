@@ -14,3 +14,5 @@ telemetry-dump/
 *.mp4
 *.gif
 .DS_Store
+.vercel
+MUJOCO_LOG.TXT

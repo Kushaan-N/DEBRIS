@@ -1,0 +1,292 @@
+{
+  "trained": [
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 0
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 1
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 2
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 3
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 4
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 5
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 6
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 7
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 8
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 9
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 10
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 11
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 12
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 13
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 14
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 15
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 16
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 17
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 18
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 19
+    }
+  ],
+  "base": [
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 0
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 1
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 2
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 3
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 4
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 5
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 6
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 7
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 8
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 9
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 10
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 11
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 12
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 13
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 14
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 15
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 16
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 17
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 18
+    },
+    {
+      "success": false,
+      "collisions": 0,
+      "fire_hits": 0,
+      "steps": 2000,
+      "seed": 19
+    }
+  ],
+  "metadata": {
+    "stage": "full_chaos",
+    "n_seeds": 20,
+    "checkpoint": "checkpoints/stage_full_chaos/policy_final.pt",
+    "max_steps": 2000
+  }
+}
