@@ -1,0 +1,42 @@
+{
+  "robot_type": "debris-navigator-v2",
+  "control_rate": 20,
+  "features": {
+    "observation/state": {
+      "role": "observation",
+      "dtype": "float32",
+      "shape": [71],
+      "names": [
+        "agent_x", "agent_y", "agent_z",
+        "agent_vx", "agent_vy", "agent_vz",
+        "facing_x", "facing_y", "facing_z",
+        "goal_dx", "goal_dy", "goal_dz",
+        "pdeb0_x", "pdeb0_y", "pdeb0_z",
+        "pdeb1_x", "pdeb1_y", "pdeb1_z",
+        "pdeb2_x", "pdeb2_y", "pdeb2_z",
+        "pdeb3_x", "pdeb3_y", "pdeb3_z",
+        "pdeb4_x", "pdeb4_y", "pdeb4_z",
+        "pdeb0_vz", "pdeb1_vz", "pdeb2_vz", "pdeb3_vz", "pdeb4_vz",
+        "sdeb0_x", "sdeb0_y", "sdeb0_z",
+        "sdeb1_x", "sdeb1_y", "sdeb1_z",
+        "sdeb2_x", "sdeb2_y", "sdeb2_z",
+        "sdeb3_x", "sdeb3_y", "sdeb3_z",
+        "sdeb4_x", "sdeb4_y", "sdeb4_z",
+        "sdeb0_vz", "sdeb1_vz", "sdeb2_vz", "sdeb3_vz", "sdeb4_vz",
+        "pdeb0_vx", "pdeb1_vx", "pdeb2_vx", "pdeb3_vx", "pdeb4_vx",
+        "pdeb0_vy", "pdeb1_vy", "pdeb2_vy", "pdeb3_vy", "pdeb4_vy",
+        "time_remaining_norm",
+        "heading_to_goal_angle",
+        "ceil0_broken", "ceil1_broken", "ceil2_broken", "ceil3_broken", "ceil4_broken",
+        "fire_zone_flag",
+        "collision_flag"
+      ]
+    },
+    "action": {
+      "role": "action",
+      "dtype": "float32",
+      "shape": [3],
+      "names": ["vx_target", "vy_target", "wz_target"]
+    }
+  }
+}

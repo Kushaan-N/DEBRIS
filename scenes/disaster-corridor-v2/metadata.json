@@ -1,0 +1,257 @@
+{
+  "name": "disaster-corridor-v2",
+  "description": "Collapsing building corridor with falling debris, ceiling crumble, wall collapse, scatter shrapnel, and fire hazard zones. Corridor 28m×7m along X axis; agent navigates from x=-12 to exit at x=+13.7.",
+  "version": "2.1.0",
+  "scene_file": "scenes/disaster-corridor-v2/scene.xml",
+
+  "agent": {
+    "body_name": "agent",
+    "start_pos": [-12.0, 0.0, 0.9],
+    "start_pos_noise_y": 1.5,
+    "actuators": [
+      {"name": "move_x", "description": "forward/back velocity target", "range": [-1.5, 1.5]},
+      {"name": "move_y", "description": "lateral velocity target",      "range": [-1.0, 1.0]},
+      {"name": "turn_z", "description": "yaw rate target",              "range": [-1.0, 1.0]}
+    ]
+  },
+
+  "goal": {
+    "pos": [13.7, 0.0, 0.9],
+    "reach_threshold": 0.9
+  },
+
+  "hazard_layers": {
+    "primary_debris": {
+      "bodies": [
+        "debris_primary_0",
+        "debris_primary_1",
+        "debris_primary_2",
+        "debris_primary_3",
+        "debris_primary_4"
+      ],
+      "spawn_height_range": [7.0, 8.5],
+      "spawn_x_range": [-11.0, 12.0],
+      "spawn_y_range": [-2.8, 2.8],
+      "respawn_delay_steps": 200
+    },
+
+    "scatter_debris": {
+      "bodies": [
+        "debris_scatter_0",
+        "debris_scatter_1",
+        "debris_scatter_2",
+        "debris_scatter_3",
+        "debris_scatter_4"
+      ],
+      "spawn_height_range": [5.5, 7.0],
+      "spawn_x_range": [-11.0, 12.0],
+      "spawn_y_range": [-2.8, 2.8],
+      "lateral_velocity_range": [-4.0, 4.0],
+      "respawn_delay_steps": 100
+    },
+
+    "ceiling_crumble": {
+      "weld_names": [
+        "weld_ceil_0",
+        "weld_ceil_1",
+        "weld_ceil_2",
+        "weld_ceil_3",
+        "weld_ceil_4"
+      ],
+      "weld_indices": [0, 1, 2, 3, 4]
+    },
+
+    "wall_collapse": {
+      "weld_names": [
+        "weld_wall_L0",
+        "weld_wall_L1",
+        "weld_wall_R0",
+        "weld_wall_R1"
+      ],
+      "weld_indices": [5, 6, 7, 8]
+    },
+
+    "fire_zones": {
+      "positions": [
+        [-6.0,  1.0, 0.5],
+        [-1.5, -1.5, 0.5],
+        [ 4.5,  1.8, 0.5]
+      ],
+      "radius": 0.65
+    }
+  },
+
+  "weld_crumble_schedule": [
+    {"step": 200, "weld": "weld_ceil_0",  "agent_x_trigger": -6.0},
+    {"step": 400, "weld": "weld_ceil_1",  "agent_x_trigger": -2.0},
+    {"step": 550, "weld": "weld_ceil_2",  "agent_x_trigger":  2.0},
+    {"step": 700, "weld": "weld_ceil_3",  "agent_x_trigger":  5.0},
+    {"step": 900, "weld": "weld_ceil_4",  "agent_x_trigger":  9.0},
+    {"step": 350, "weld": "weld_wall_L0", "agent_x_trigger": -2.0},
+    {"step": 650, "weld": "weld_wall_L1", "agent_x_trigger":  5.0},
+    {"step": 500, "weld": "weld_wall_R0", "agent_x_trigger":  0.0},
+    {"step": 800, "weld": "weld_wall_R1", "agent_x_trigger":  7.0}
+  ],
+
+  "episode": {
+    "max_steps": 2500,
+    "timestep": 0.004,
+    "control_freq_hz": 20
+  },
+
+  "observation": {
+    "dim": 71,
+    "layout": [
+      {
+        "name": "agent_pos",
+        "indices": [0, 1, 2],
+        "source": "sensor:agent_pos",
+        "description": "agent xyz world frame"
+      },
+      {
+        "name": "agent_vel",
+        "indices": [3, 4, 5],
+        "source": "sensor:agent_vel",
+        "description": "agent vx vy vz"
+      },
+      {
+        "name": "agent_facing",
+        "indices": [6, 7, 8],
+        "source": "sensor:agent_facing",
+        "description": "agent forward unit vector (x-axis of body frame in world)"
+      },
+      {
+        "name": "goal_relative_pos",
+        "indices": [9, 10, 11],
+        "source": "computed:goal_pos - agent_pos",
+        "description": "vector from agent to goal in world frame"
+      },
+      {
+        "name": "primary_debris_pos",
+        "indices": [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
+        "source": "sensors:debris_p0_pos..debris_p4_pos",
+        "description": "5 × xyz positions of primary debris bodies, flattened"
+      },
+      {
+        "name": "primary_debris_vz",
+        "indices": [27, 28, 29, 30, 31],
+        "source": "sensors:debris_p0_vel..debris_p4_vel[2]",
+        "description": "5 vertical (z) velocities of primary debris — negative means falling toward agent"
+      },
+      {
+        "name": "scatter_debris_pos",
+        "indices": [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
+        "source": "sensors:debris_s0_pos..debris_s4_pos",
+        "description": "5 × xyz positions of scatter debris bodies, flattened"
+      },
+      {
+        "name": "scatter_debris_vz",
+        "indices": [47, 48, 49, 50, 51],
+        "source": "sensors:debris_s0_vel..debris_s4_vel[2]",
+        "description": "5 vertical (z) velocities of scatter debris"
+      },
+      {
+        "name": "primary_debris_vx",
+        "indices": [52, 53, 54, 55, 56],
+        "source": "sensors:debris_p0_vel..debris_p4_vel[0]",
+        "description": "5 lateral x velocities of primary debris — predicts landing zone"
+      },
+      {
+        "name": "primary_debris_vy",
+        "indices": [57, 58, 59, 60, 61],
+        "source": "sensors:debris_p0_vel..debris_p4_vel[1]",
+        "description": "5 lateral y velocities of primary debris — predicts landing zone"
+      },
+      {
+        "name": "time_remaining_norm",
+        "indices": [62],
+        "source": "computed:(max_steps - step) / max_steps",
+        "description": "normalized time remaining 0-1, 1.0=episode start 0.0=timeout"
+      },
+      {
+        "name": "heading_to_goal_angle",
+        "indices": [63],
+        "source": "computed:arccos(dot(facing_xy, goal_dir_xy))",
+        "description": "angle between agent facing direction and goal direction in radians, 0=facing goal"
+      },
+      {
+        "name": "ceil_broken_flags",
+        "indices": [64, 65, 66, 67, 68],
+        "source": "computed:model.eq_active[0:5] inverted",
+        "description": "5 booleans — 1 = tile weld broken / tile is falling"
+      },
+      {
+        "name": "fire_zone_flag",
+        "indices": [69],
+        "source": "computed:agent proximity to fire_zones",
+        "description": "1 if agent center is within radius 0.65m of any fire zone center"
+      },
+      {
+        "name": "collision_flag",
+        "indices": [70],
+        "source": "sensor:contact_agent threshold",
+        "description": "1 if debris contact normal force on agent exceeds impact threshold"
+      }
+    ]
+  },
+
+  "reward": {
+    "goal_reached": 25.0,
+    "collision_penalty_on_contact_start": -3.0,
+    "fire_zone_penalty": -2.0,
+    "overhead_debris_penalty": -0.5,
+    "overhead_debris_radius_xy": 1.2,
+    "overhead_debris_min_height_above_agent": 1.0,
+    "overhead_debris_min_fall_speed": 2.0,
+    "time_penalty_per_step": -0.002,
+    "progress_weight": 0.1,
+    "collision_penalty_enabled_from_stage": "debris_only"
+  },
+
+  "curriculum": [
+    {
+      "stage": 1,
+      "name": "static_only",
+      "active_primary_debris": 0,
+      "active_scatter_debris": 0,
+      "crumble_enabled": false,
+      "collision_penalties_enabled": false,
+      "max_steps": 2500,
+      "total_steps": 400000,
+      "load_from_stage": null
+    },
+    {
+      "stage": 2,
+      "name": "debris_only",
+      "active_primary_debris": 3,
+      "active_scatter_debris": 0,
+      "crumble_enabled": false,
+      "collision_penalties_enabled": true,
+      "max_steps": 2500,
+      "total_steps": 800000,
+      "load_from_stage": "static_only"
+    },
+    {
+      "stage": 3,
+      "name": "debris_and_scatter",
+      "active_primary_debris": 5,
+      "active_scatter_debris": 3,
+      "crumble_enabled": false,
+      "collision_penalties_enabled": true,
+      "max_steps": 2500,
+      "total_steps": 1000000,
+      "load_from_stage": "debris_only"
+    },
+    {
+      "stage": 4,
+      "name": "full_chaos",
+      "active_primary_debris": 5,
+      "active_scatter_debris": 5,
+      "crumble_enabled": true,
+      "collision_penalties_enabled": true,
+      "max_steps": 2500,
+      "total_steps": 1500000,
+      "load_from_stage": "debris_and_scatter"
+    }
+  ]
+}

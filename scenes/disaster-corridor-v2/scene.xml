@@ -1,0 +1,468 @@
+<mujoco model="disaster-corridor-v2">
+
+  <compiler autolimits="true" angle="radian"/>
+
+  <option gravity="0 0 -9.81" timestep="0.004" integrator="euler"/>
+
+  <default>
+    <geom condim="3" friction="0.9 0.005 0.001" contype="1" conaffinity="1"/>
+  </default>
+
+  <!-- ================================================================
+       ASSETS
+       ================================================================ -->
+  <asset>
+    <!-- Floor: dark checker texture -->
+    <texture name="floor_tex" type="2d" builtin="checker"
+             rgb1="0.12 0.12 0.12" rgb2="0.22 0.22 0.22"
+             width="512" height="512"/>
+    <material name="floor_mat" texture="floor_tex" texrepeat="28 7" reflectance="0.04"/>
+
+    <!-- Structural concrete -->
+    <material name="concrete_mat"     rgba="0.55 0.53 0.50 1.0"/>
+    <material name="concrete_cracked" rgba="0.47 0.43 0.38 1.0"/>
+
+    <!-- Ceiling tile materials -->
+    <material name="ceiling_mat"    rgba="0.60 0.57 0.53 1.0"/>
+    <material name="ceiling_broken" rgba="0.50 0.46 0.40 1.0"/>
+
+    <!-- Debris materials -->
+    <material name="debris_heavy" rgba="0.42 0.38 0.32 1.0"/>
+    <material name="debris_light" rgba="0.62 0.55 0.44 1.0"/>
+    <material name="rebar_mat"    rgba="0.66 0.37 0.16 1.0"/>
+
+    <!-- Hazard materials -->
+    <material name="fire_mat"  rgba="0.95 0.28 0.04 0.85"/>
+    <material name="ember_mat" rgba="0.98 0.72 0.10 0.70"/>
+
+    <!-- Agent and goal -->
+    <material name="goal_mat"  rgba="0.10 0.85 0.20 0.55"/>
+    <material name="agent_mat" rgba="0.15 0.40 0.85 1.0"/>
+
+    <!-- Danger debris tones -->
+    <material name="danger_red"    rgba="0.85 0.10 0.05 1.0"/>
+    <material name="danger_orange" rgba="0.90 0.45 0.05 1.0"/>
+  </asset>
+
+  <!-- ================================================================
+       EQUALITY CONSTRAINTS — indices 0-8 (order is the weld index map)
+       ================================================================ -->
+  <equality>
+    <!-- Ceiling tile welds: indices 0-4 -->
+    <weld name="weld_ceil_0"  body1="ceil_anchor_0"  body2="ceil_fall_0"  active="true"/>
+    <weld name="weld_ceil_1"  body1="ceil_anchor_1"  body2="ceil_fall_1"  active="true"/>
+    <weld name="weld_ceil_2"  body1="ceil_anchor_2"  body2="ceil_fall_2"  active="true"/>
+    <weld name="weld_ceil_3"  body1="ceil_anchor_3"  body2="ceil_fall_3"  active="true"/>
+    <weld name="weld_ceil_4"  body1="ceil_anchor_4"  body2="ceil_fall_4"  active="true"/>
+    <!-- Wall chunk welds: indices 5-8 -->
+    <weld name="weld_wall_L0" body1="wall_anchor_L0" body2="wall_chunk_L0" active="true"/>
+    <weld name="weld_wall_L1" body1="wall_anchor_L1" body2="wall_chunk_L1" active="true"/>
+    <weld name="weld_wall_R0" body1="wall_anchor_R0" body2="wall_chunk_R0" active="true"/>
+    <weld name="weld_wall_R1" body1="wall_anchor_R1" body2="wall_chunk_R1" active="true"/>
+  </equality>
+
+  <!-- ================================================================
+       WORLDBODY
+       ================================================================ -->
+  <worldbody>
+
+    <!-- -------- LIGHTING -------- -->
+    <!-- Overhead dim (power-outage atmosphere) -->
+    <light name="main_overhead" directional="true" pos="0 0 8" dir="0 0 -1"
+           diffuse="0.25 0.22 0.18" specular="0.04 0.04 0.04" ambient="0.05 0.04 0.03"/>
+
+    <!-- Emergency red strip lights at x=-9, -3, 4, 10 -->
+    <light name="emerg_0" directional="false" pos="-9 0 3.5"
+           diffuse="0.70 0.08 0.06" specular="0 0 0" mode="fixed"/>
+    <light name="emerg_1" directional="false" pos="-3 0 3.5"
+           diffuse="0.70 0.08 0.06" specular="0 0 0" mode="fixed"/>
+    <light name="emerg_2" directional="false" pos="4  0 3.5"
+           diffuse="0.70 0.08 0.06" specular="0 0 0" mode="fixed"/>
+    <light name="emerg_3" directional="false" pos="10 0 3.5"
+           diffuse="0.70 0.08 0.06" specular="0 0 0" mode="fixed"/>
+
+    <!-- Fire glow orange point lights -->
+    <light name="fire_glow_0" directional="false" pos="-6  1.0 1.5"
+           diffuse="0.90 0.45 0.05" specular="0 0 0" mode="fixed"/>
+    <light name="fire_glow_1" directional="false" pos="4.5 1.8 1.5"
+           diffuse="0.90 0.45 0.05" specular="0 0 0" mode="fixed"/>
+
+    <!-- -------- FLOOR -------- -->
+    <!-- 28m × 7m corridor plane, dark checker -->
+    <geom name="floor" type="plane" size="14 3.5 0.1" pos="0 0 0"
+          material="floor_mat" friction="0.9 0.005 0.001"/>
+
+    <!-- -------- PERMANENT WALLS -------- -->
+
+    <!-- Left wall base: y=-3.5, z 0→1.0m (half-height=0.5, center z=0.5) -->
+    <geom name="wall_left_base"  type="box" size="14 0.15 0.5"
+          pos="0 -3.5 0.5"  material="concrete_mat"/>
+    <!-- Left wall upper: y=-3.5, z 1.0→4.5m (half-height=1.75, center z=2.75) -->
+    <geom name="wall_left_upper" type="box" size="14 0.15 1.75"
+          pos="0 -3.5 2.75" material="concrete_cracked"/>
+
+    <!-- Right wall base: y=+3.5, z 0→1.0m -->
+    <geom name="wall_right_base"  type="box" size="14 0.15 0.5"
+          pos="0 3.5 0.5"   material="concrete_mat"/>
+    <!-- Right wall upper: y=+3.5, z 1.0→4.5m -->
+    <geom name="wall_right_upper" type="box" size="14 0.15 1.75"
+          pos="0 3.5 2.75"  material="concrete_cracked"/>
+
+    <!-- Back wall: x=-14, full cross-section seal (half=2.5m, center z=2.5) -->
+    <geom name="wall_back"        type="box" size="0.15 3.5 2.5"
+          pos="-14 0 2.5"   material="concrete_mat"/>
+
+    <!-- Front wall left piece: x=+14, y -3.5→-1.0 (half-y=1.25, center y=-2.25) -->
+    <geom name="wall_front_L"     type="box" size="0.15 1.25 2.5"
+          pos="14 -2.25 2.5" material="concrete_mat"/>
+    <!-- Front wall right piece: x=+14, y +1.0→+3.5 (half-y=1.25, center y=+2.25) -->
+    <geom name="wall_front_R"     type="box" size="0.15 1.25 2.5"
+          pos="14  2.25 2.5" material="concrete_mat"/>
+
+    <!-- -------- CEILING TILE ANCHORS (fixed, no joint) -------- -->
+
+    <body name="ceil_anchor_0" pos="-9   0 5.5">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+    <body name="ceil_anchor_1" pos="-4.5 0 5.5">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+    <body name="ceil_anchor_2" pos="0    0 5.5">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+    <body name="ceil_anchor_3" pos="4.5  0 5.5">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+    <body name="ceil_anchor_4" pos="9    0 5.5">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+
+    <!-- -------- CEILING TILE FALLING BODIES -------- -->
+    <!-- Slab: ~2m × 1.5m × 0.25m → half-extents 1.0 × 0.75 × 0.125 -->
+    <!-- Initial pos: x same as anchor, y ±0.3 offset, z=5.2 -->
+
+    <!-- Tile 0: x=-9, mass=220kg, 2 rebars -->
+    <body name="ceil_fall_0" pos="-9 0.3 5.2">
+      <freejoint name="ceil_fall_0_joint"/>
+      <geom name="ceil_slab_0" type="box" size="1.0 0.75 0.125"
+            mass="220" material="ceiling_mat"/>
+      <geom name="rebar_0a" type="cylinder" size="0.04 0.30"
+            pos="0.30  0.10 0" euler="0.20 1.5708 0.30"
+            mass="4" material="rebar_mat"/>
+      <geom name="rebar_0b" type="cylinder" size="0.04 0.35"
+            pos="-0.40 -0.20 0" euler="-0.30 1.5708 0.50"
+            mass="5" material="rebar_mat"/>
+    </body>
+
+    <!-- Tile 1: x=-4.5, mass=350kg, 1 rebar -->
+    <body name="ceil_fall_1" pos="-4.5 -0.2 5.2">
+      <freejoint name="ceil_fall_1_joint"/>
+      <geom name="ceil_slab_1" type="box" size="1.0 0.75 0.125"
+            mass="350" material="ceiling_mat"/>
+      <geom name="rebar_1a" type="cylinder" size="0.04 0.45"
+            pos="0.50 0.30 0" euler="0.40 1.5708 -0.30"
+            mass="5" material="rebar_mat"/>
+    </body>
+
+    <!-- Tile 2: x=0, mass=180kg, no rebar -->
+    <body name="ceil_fall_2" pos="0 0.1 5.2">
+      <freejoint name="ceil_fall_2_joint"/>
+      <geom name="ceil_slab_2" type="box" size="1.0 0.75 0.125"
+            mass="180" material="ceiling_mat"/>
+    </body>
+
+    <!-- Tile 3: x=4.5, mass=390kg, 2 rebars -->
+    <body name="ceil_fall_3" pos="4.5 -0.3 5.2">
+      <freejoint name="ceil_fall_3_joint"/>
+      <geom name="ceil_slab_3" type="box" size="1.0 0.75 0.125"
+            mass="390" material="ceiling_mat"/>
+      <geom name="rebar_3a" type="cylinder" size="0.04 0.30"
+            pos="-0.30  0.20 0" euler="0.10 1.5708 0.60"
+            mass="3" material="rebar_mat"/>
+      <geom name="rebar_3b" type="cylinder" size="0.04 0.40"
+            pos=" 0.40 -0.40 0" euler="0.50 1.5708 -0.20"
+            mass="4" material="rebar_mat"/>
+    </body>
+
+    <!-- Tile 4: x=9, mass=310kg, no rebar -->
+    <body name="ceil_fall_4" pos="9 0.2 5.2">
+      <freejoint name="ceil_fall_4_joint"/>
+      <geom name="ceil_slab_4" type="box" size="1.0 0.75 0.125"
+            mass="310" material="ceiling_mat"/>
+    </body>
+
+    <!-- -------- WALL CHUNK ANCHORS (fixed to wall face, no joint) -------- -->
+
+    <!-- Left wall anchors at y=-3.5 -->
+    <body name="wall_anchor_L0" pos="-4.0 -3.5 1.2">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+    <body name="wall_anchor_L1" pos="6.0 -3.5 1.5">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+
+    <!-- Right wall anchors at y=+3.5 -->
+    <body name="wall_anchor_R0" pos="-7.0 3.5 1.4">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+    <body name="wall_anchor_R1" pos="3.0 3.5 2.0">
+      <geom type="box" size="0.01 0.01 0.01" mass="0.001"
+            contype="0" conaffinity="0" rgba="0 0 0 0"/>
+    </body>
+
+    <!-- -------- WALL CHUNK FALLING BODIES -------- -->
+    <!-- Chunks protrude slightly from inner wall face (y≈±3.3) -->
+
+    <!-- L0: x=-4.0, box 2.0×0.3×0.8 → half-extents 1.0×0.15×0.4, mass=400 -->
+    <body name="wall_chunk_L0" pos="-4.0 -3.3 1.2">
+      <freejoint name="wall_chunk_L0_joint"/>
+      <geom name="wchunk_L0" type="box" size="1.0 0.15 0.4"
+            mass="400" material="concrete_cracked"/>
+    </body>
+
+    <!-- L1: x=6.0, box 1.2×0.3×0.6 → half-extents 0.6×0.15×0.3, mass=250 -->
+    <body name="wall_chunk_L1" pos="6.0 -3.3 1.5">
+      <freejoint name="wall_chunk_L1_joint"/>
+      <geom name="wchunk_L1" type="box" size="0.6 0.15 0.3"
+            mass="250" material="concrete_cracked"/>
+    </body>
+
+    <!-- R0: x=-7.0, box 1.5×0.3×0.7 → half-extents 0.75×0.15×0.35, mass=300 -->
+    <body name="wall_chunk_R0" pos="-7.0 3.3 1.4">
+      <freejoint name="wall_chunk_R0_joint"/>
+      <geom name="wchunk_R0" type="box" size="0.75 0.15 0.35"
+            mass="300" material="concrete_cracked"/>
+    </body>
+
+    <!-- R1: x=3.0, box 1.8×0.3×0.5 → half-extents 0.9×0.15×0.25, mass=350 -->
+    <body name="wall_chunk_R1" pos="3.0 3.3 2.0">
+      <freejoint name="wall_chunk_R1_joint"/>
+      <geom name="wchunk_R1" type="box" size="0.9 0.15 0.25"
+            mass="350" material="concrete_cracked"/>
+    </body>
+
+    <!-- -------- PRIMARY FALLING DEBRIS (freejoint, no weld) -------- -->
+    <!-- 5 heavy bodies 18-30kg, spawn height 7-8.5m, mixed box/sphere -->
+
+    <body name="debris_primary_0" pos="-10 0.8 7.5">
+      <freejoint name="debris_primary_0_joint"/>
+      <geom name="dprim_0" type="box" size="0.175 0.150 0.140"
+            mass="22" euler="0.20 0.00 0.30" material="danger_red"/>
+    </body>
+
+    <body name="debris_primary_1" pos="-5.5 -1.2 8.0">
+      <freejoint name="debris_primary_1_joint"/>
+      <geom name="dprim_1" type="sphere" size="0.22"
+            mass="28" material="danger_orange"/>
+    </body>
+
+    <body name="debris_primary_2" pos="-1.0 0.5 7.2">
+      <freejoint name="debris_primary_2_joint"/>
+      <geom name="dprim_2" type="box" size="0.150 0.200 0.125"
+            mass="18" euler="0.10 0.30 0.00" material="danger_red"/>
+    </body>
+
+    <body name="debris_primary_3" pos="4.0 -0.8 8.5">
+      <freejoint name="debris_primary_3_joint"/>
+      <geom name="dprim_3" type="sphere" size="0.20"
+            mass="25" material="danger_orange"/>
+    </body>
+
+    <body name="debris_primary_4" pos="8.5 1.5 7.8">
+      <freejoint name="debris_primary_4_joint"/>
+      <geom name="dprim_4" type="box" size="0.275 0.225 0.150"
+            mass="30" euler="0.30 0.10 0.40" material="danger_red"/>
+    </body>
+
+    <!-- -------- SCATTER SHRAPNEL (freejoint, no weld) -------- -->
+    <!-- 5 light bodies 2-5kg, spawn height 5.5-7m, x/y distinct from primary -->
+
+    <body name="debris_scatter_0" pos="-8.0 0.3 6.0">
+      <freejoint name="debris_scatter_0_joint"/>
+      <geom name="dscat_0" type="box" size="0.060 0.050 0.040"
+            mass="3.0" material="debris_light"/>
+    </body>
+
+    <body name="debris_scatter_1" pos="-3.0 1.8 5.5">
+      <freejoint name="debris_scatter_1_joint"/>
+      <geom name="dscat_1" type="sphere" size="0.10"
+            mass="2.0" material="debris_light"/>
+    </body>
+
+    <body name="debris_scatter_2" pos="1.5 -0.9 6.5">
+      <freejoint name="debris_scatter_2_joint"/>
+      <geom name="dscat_2" type="box" size="0.090 0.075 0.050"
+            mass="5.0" material="debris_light"/>
+    </body>
+
+    <body name="debris_scatter_3" pos="6.0 0.5 7.0">
+      <freejoint name="debris_scatter_3_joint"/>
+      <geom name="dscat_3" type="sphere" size="0.15"
+            mass="4.0" material="debris_light"/>
+    </body>
+
+    <body name="debris_scatter_4" pos="10.0 -1.2 5.8">
+      <freejoint name="debris_scatter_4_joint"/>
+      <geom name="dscat_4" type="box" size="0.110 0.090 0.060"
+            mass="2.5" material="debris_light"/>
+    </body>
+
+    <!-- -------- STATIC RUBBLE PILES (fixed geoms, no joint) -------- -->
+    <!-- Distributed to force navigation around them, exit gap at y≈0 clear -->
+
+    <!-- Pile 0: near start, left side -->
+    <geom name="rubble_0a" type="box"    size="0.40 0.30 0.25"
+          pos="-11.0 -1.5 0.25" euler="0.10 0.00 0.30" material="debris_heavy"/>
+    <geom name="rubble_0b" type="box"    size="0.30 0.20 0.20"
+          pos="-11.4 -1.2 0.45" euler="0.30 0.10 0.00" material="debris_heavy"/>
+    <geom name="rubble_0c" type="sphere" size="0.18"
+          pos="-10.6 -1.8 0.18"                         material="debris_heavy"/>
+
+    <!-- Pile 1: mid-left, right side of corridor -->
+    <geom name="rubble_1a" type="box"    size="0.50 0.35 0.30"
+          pos="-6.0 2.0 0.30" euler="0.00 0.20 0.40" material="debris_heavy"/>
+    <geom name="rubble_1b" type="box"    size="0.35 0.25 0.25"
+          pos="-6.4 2.3 0.55" euler="0.40 0.00 0.20" material="debris_heavy"/>
+
+    <!-- Pile 2: center zone, left side — agent must go right or right-center -->
+    <geom name="rubble_2a" type="box"    size="0.45 0.30 0.30"
+          pos="-2.0 -2.0 0.30" euler="0.20 0.10 0.50" material="debris_heavy"/>
+    <geom name="rubble_2b" type="sphere" size="0.25"
+          pos="-2.4 -1.7 0.55"                         material="debris_heavy"/>
+    <geom name="rubble_2c" type="box"    size="0.30 0.25 0.20"
+          pos="-1.6 -2.3 0.50" euler="0.10 0.30 0.00" material="debris_heavy"/>
+
+    <!-- Pile 3: forward-right zone -->
+    <geom name="rubble_3a" type="box"    size="0.40 0.30 0.25"
+          pos="5.0 1.2 0.25" euler="0.30 0.00 0.20" material="debris_heavy"/>
+    <geom name="rubble_3b" type="box"    size="0.25 0.20 0.20"
+          pos="5.4 0.9 0.45" euler="0.00 0.20 0.40" material="debris_heavy"/>
+
+    <!-- Pile 4: near-exit, left-side — center exit lane stays clear -->
+    <geom name="rubble_4a" type="box"    size="0.45 0.30 0.35"
+          pos="10.0 -1.8 0.35" euler="0.10 0.20 0.30" material="debris_heavy"/>
+    <geom name="rubble_4b" type="sphere" size="0.20"
+          pos="10.4 -1.5 0.55"                         material="debris_heavy"/>
+    <geom name="rubble_4c" type="box"    size="0.30 0.25 0.20"
+          pos=" 9.6 -2.1 0.50" euler="0.40 0.00 0.10" material="debris_heavy"/>
+
+    <!-- -------- FIRE HAZARD ZONES (no physics collision) -------- -->
+    <!-- Positions specified exactly per prompt; bridge checks agent proximity -->
+
+    <geom name="fire_zone_0" type="cylinder" size="0.6 0.5"
+          pos="-6.0 1.0 0.5"  material="fire_mat" contype="0" conaffinity="0"/>
+    <geom name="fire_zone_1" type="cylinder" size="0.6 0.5"
+          pos="-1.5 -1.5 0.5" material="fire_mat" contype="0" conaffinity="0"/>
+    <geom name="fire_zone_2" type="cylinder" size="0.6 0.5"
+          pos="4.5 1.8 0.5"   material="fire_mat" contype="0" conaffinity="0"/>
+
+    <!-- Embers near fire zone 0 (x≈-6, y≈1) -->
+    <geom name="ember_0a" type="sphere" size="0.08" pos="-6.55  0.55 0.45"
+          material="ember_mat" contype="0" conaffinity="0"/>
+    <geom name="ember_0b" type="sphere" size="0.06" pos="-5.55  1.45 0.40"
+          material="ember_mat" contype="0" conaffinity="0"/>
+
+    <!-- Embers near fire zone 1 (x≈-1.5, y≈-1.5) -->
+    <geom name="ember_1a" type="sphere" size="0.07" pos="-2.05 -1.10 0.40"
+          material="ember_mat" contype="0" conaffinity="0"/>
+    <geom name="ember_1b" type="sphere" size="0.09" pos="-0.95 -1.95 0.48"
+          material="ember_mat" contype="0" conaffinity="0"/>
+    <geom name="ember_1c" type="sphere" size="0.05" pos="-1.85 -2.05 0.30"
+          material="ember_mat" contype="0" conaffinity="0"/>
+
+    <!-- Embers near fire zone 2 (x≈4.5, y≈1.8) -->
+    <geom name="ember_2a" type="sphere" size="0.07" pos="3.95  2.25 0.40"
+          material="ember_mat" contype="0" conaffinity="0"/>
+    <geom name="ember_2b" type="sphere" size="0.06" pos="5.10  1.45 0.48"
+          material="ember_mat" contype="0" conaffinity="0"/>
+
+    <!-- -------- AGENT -------- -->
+
+    <body name="agent" pos="-12.0 0.0 0.9">
+      <freejoint name="agent_root"/>
+      <!-- Capsule: radius=0.25m, half-cylinder=0.55m → total half-extent 0.80m -->
+      <geom name="agent_geom" type="capsule" size="0.25 0.55"
+            mass="75" material="agent_mat" friction="0.9 0.005 0.001"/>
+      <site name="agent_touch_site" type="sphere" size="0.30" pos="0 0 0"/>
+    </body>
+
+    <!-- -------- GOAL ZONE -------- -->
+
+    <geom name="goal_zone" type="box" size="0.3 2.0 2.5"
+          pos="13.7 0.0 1.5" material="goal_mat"
+          contype="0" conaffinity="0"/>
+
+  </worldbody>
+
+  <!-- ================================================================
+       ACTUATORS
+       ================================================================ -->
+  <actuator>
+    <velocity name="move_x" joint="agent_root" gear="1 0 0 0 0 0" kv="250"/>
+    <velocity name="move_y" joint="agent_root" gear="0 1 0 0 0 0" kv="250"/>
+    <velocity name="turn_z" joint="agent_root" gear="0 0 0 0 0 1" kv="60"/>
+  </actuator>
+
+  <!-- ================================================================
+       SENSORS — names must match disaster_bridge_v2.py exactly
+       ================================================================ -->
+  <sensor>
+
+    <!-- Agent state -->
+    <framepos    name="agent_pos"     body="agent"/>
+    <framelinvel name="agent_vel"     body="agent"/>
+    <framexaxis  name="agent_facing"  body="agent"/>
+    <touch       name="contact_agent" site="agent_touch_site"/>
+
+    <!-- Primary debris positions (obs [12:27]) -->
+    <framepos name="debris_p0_pos" body="debris_primary_0"/>
+    <framepos name="debris_p1_pos" body="debris_primary_1"/>
+    <framepos name="debris_p2_pos" body="debris_primary_2"/>
+    <framepos name="debris_p3_pos" body="debris_primary_3"/>
+    <framepos name="debris_p4_pos" body="debris_primary_4"/>
+
+    <!-- Primary debris velocities — bridge extracts vz [27:32], vx [52:57], vy [57:62] -->
+    <framelinvel name="debris_p0_vel" body="debris_primary_0"/>
+    <framelinvel name="debris_p1_vel" body="debris_primary_1"/>
+    <framelinvel name="debris_p2_vel" body="debris_primary_2"/>
+    <framelinvel name="debris_p3_vel" body="debris_primary_3"/>
+    <framelinvel name="debris_p4_vel" body="debris_primary_4"/>
+
+    <!-- Scatter debris positions (obs [32:47]) -->
+    <framepos name="debris_s0_pos" body="debris_scatter_0"/>
+    <framepos name="debris_s1_pos" body="debris_scatter_1"/>
+    <framepos name="debris_s2_pos" body="debris_scatter_2"/>
+    <framepos name="debris_s3_pos" body="debris_scatter_3"/>
+    <framepos name="debris_s4_pos" body="debris_scatter_4"/>
+
+    <!-- Scatter debris velocities — bridge extracts vz for obs [47:52] -->
+    <framelinvel name="debris_s0_vel" body="debris_scatter_0"/>
+    <framelinvel name="debris_s1_vel" body="debris_scatter_1"/>
+    <framelinvel name="debris_s2_vel" body="debris_scatter_2"/>
+    <framelinvel name="debris_s3_vel" body="debris_scatter_3"/>
+    <framelinvel name="debris_s4_vel" body="debris_scatter_4"/>
+
+    <!-- Ceiling tile positions — bridge derives broken flags (obs [52:57]) -->
+    <framepos name="ceil_0pos" body="ceil_fall_0"/>
+    <framepos name="ceil_1pos" body="ceil_fall_1"/>
+    <framepos name="ceil_2pos" body="ceil_fall_2"/>
+    <framepos name="ceil_3pos" body="ceil_fall_3"/>
+    <framepos name="ceil_4pos" body="ceil_fall_4"/>
+
+    <!-- Wall chunk positions — used by bridge for collapse state tracking -->
+    <framepos name="wall_L0_pos" body="wall_chunk_L0"/>
+    <framepos name="wall_L1_pos" body="wall_chunk_L1"/>
+    <framepos name="wall_R0_pos" body="wall_chunk_R0"/>
+    <framepos name="wall_R1_pos" body="wall_chunk_R1"/>
+
+  </sensor>
+
+</mujoco>
