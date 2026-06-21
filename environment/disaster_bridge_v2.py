@@ -107,6 +107,7 @@ class DisasterBridgeV2(RobotBridge if _HUD_AVAILABLE else object):
         self.collision_count          = 0
         self.fire_zone_hits           = 0
         self.prev_dist_to_goal        = float(np.linalg.norm(self.AGENT_START - self.GOAL_POS))
+        self._prev_agent_x            = float(self.AGENT_START[0])   # -12.0; for diagnostics
         self.success                  = False
         self.terminated               = False
         self.was_in_contact_last_step = False   # edge detection for collision penalty
@@ -280,10 +281,15 @@ class DisasterBridgeV2(RobotBridge if _HUD_AVAILABLE else object):
         # 1. Progress shaping (always on)
         reward += self.R_PROGRESS * progress
 
-        # 2. Goal reached (always on)
-        if dist < self.GOAL_THRESHOLD:
+        # 2. Goal reached — x-axis only so y/z drift doesn't prevent success
+        if agent_pos[0] >= (self.GOAL_POS[0] - self.GOAL_THRESHOLD):
             reward += self.R_GOAL
             self.success = True
+            print(
+                f"[goal] step={self.step_count} x={agent_pos[0]:.3f} "
+                f"prev_x={self._prev_agent_x:.3f} dist={dist:.3f} "
+                f"progress_component={self.R_PROGRESS * progress:.3f}"
+            )
 
         # 3. Collision penalty — EDGE DETECTION ONLY (fires on first frame of contact)
         if self.collision_penalties_enabled:
@@ -313,7 +319,13 @@ class DisasterBridgeV2(RobotBridge if _HUD_AVAILABLE else object):
 
         # 6. Time penalty
         reward += self.R_TIME
-        return float(reward)
+
+        # Update x tracker (used for diagnostics on goal step)
+        self._prev_agent_x = float(agent_pos[0])
+
+        # Safety clamp — no single step reward should be outside [-10, 30]
+        reward = float(np.clip(reward, -10.0, 30.0))
+        return reward
 
     # ------------------------------------------------------------------
     # Collapse wave
