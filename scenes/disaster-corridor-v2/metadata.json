@@ -94,7 +94,7 @@
   ],
 
   "episode": {
-    "max_steps": 2500,
+    "max_steps": 4000,
     "timestep": 0.004,
     "control_freq_hz": 20
   },
@@ -203,8 +203,8 @@
     "overhead_debris_radius_xy": 1.2,
     "overhead_debris_min_height_above_agent": 1.0,
     "overhead_debris_min_fall_speed": 2.0,
-    "time_penalty_per_step": -0.002,
-    "progress_weight": 0.1,
+    "time_penalty_per_step": 0.0,
+    "progress_weight": 0.5,
     "collision_penalty_enabled_from_stage": "debris_only"
   },
 
@@ -216,8 +216,8 @@
       "active_scatter_debris": 0,
       "crumble_enabled": false,
       "collision_penalties_enabled": false,
-      "max_steps": 2500,
-      "total_steps": 400000,
+      "max_steps": 4000,
+      "total_steps": 600000,
       "load_from_stage": null
     },
     {
@@ -227,8 +227,8 @@
       "active_scatter_debris": 0,
       "crumble_enabled": false,
       "collision_penalties_enabled": true,
-      "max_steps": 2500,
-      "total_steps": 800000,
+      "max_steps": 4000,
+      "total_steps": 1000000,
       "load_from_stage": "static_only"
     },
     {
@@ -238,8 +238,8 @@
       "active_scatter_debris": 3,
       "crumble_enabled": false,
       "collision_penalties_enabled": true,
-      "max_steps": 2500,
-      "total_steps": 1000000,
+      "max_steps": 4000,
+      "total_steps": 1200000,
       "load_from_stage": "debris_only"
     },
     {
@@ -249,7 +249,7 @@
       "active_scatter_debris": 5,
       "crumble_enabled": true,
       "collision_penalties_enabled": true,
-      "max_steps": 2500,
+      "max_steps": 4000,
       "total_steps": 1500000,
       "load_from_stage": "debris_and_scatter"
     }
