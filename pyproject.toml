@@ -16,6 +16,8 @@ dependencies = [
     "mujoco-warp>=3.8.0.1",  # Newton's MuJoCo solver backend
     "scipy>=1.11.0",       # mesh processing during scene import
     "trimesh>=4.6.8",      # mesh loading during scene import
+    "modal>=1.5.0",
+    "torch>=2.7.1",
 ]
 
 [project.optional-dependencies]
