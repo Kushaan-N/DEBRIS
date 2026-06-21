@@ -67,8 +67,10 @@ def save_policy(policy: PolicyNet, path: str | Path, metadata: dict | None = Non
 
 
 def load_policy(path: str | Path, device: str = "cpu") -> PolicyNet:
-    ckpt = torch.load(path, map_location=device)
+    ckpt = torch.load(path, map_location=torch.device(device), weights_only=False)
     policy = PolicyNet()
-    policy.load_state_dict(ckpt["state_dict"])
+    # Handle both key names — older saves used 'state_dict', newer use 'policy_state'
+    state_dict = ckpt.get("policy_state", ckpt.get("state_dict", ckpt))
+    policy.load_state_dict(state_dict)
     policy.eval()
     return policy
