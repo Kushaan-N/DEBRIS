@@ -450,7 +450,7 @@
           <span class="dot dot-red"></span>untrained agent
         </div>
         <div class="video-box">
-          <video src="" data-src-placeholder="untrained.mp4" autoplay loop muted playsinline></video>
+          <video src="untrained.mp4" autoplay loop muted playsinline></video>
           <div class="video-placeholder">
             <span class="video-placeholder-label">[ video ]</span>
             <span class="video-placeholder-sub">untrained.mp4</span>
@@ -462,7 +462,7 @@
           <span class="dot dot-green"></span>trained agent
         </div>
         <div class="video-box">
-          <video src="" data-src-placeholder="trained.mp4" autoplay loop muted playsinline></video>
+          <video src="trained.mp4" autoplay loop muted playsinline></video>
           <div class="video-placeholder">
             <span class="video-placeholder-label">[ video ]</span>
             <span class="video-placeholder-sub">trained.mp4</span>
@@ -748,15 +748,12 @@ window.addEventListener('load', () => {
   }, 400);
 });
 
-// ── Video placeholder: show video if src is set ──
+// ── Video placeholder: always hide placeholder, show video ──
 document.querySelectorAll('.video-box').forEach(box => {
   const vid = box.querySelector('video');
   const ph  = box.querySelector('.video-placeholder');
-  const src = vid.getAttribute('src');
-  if (src && src.trim() !== '') {
-    vid.style.display = 'block';
-    if (ph) ph.style.display = 'none';
-  }
+  vid.style.display = 'block';
+  if (ph) ph.style.display = 'none';
 });
 
 // ── Reward chart ──
