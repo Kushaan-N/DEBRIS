@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEBRIS — Blind-Assistive Navigation via Reinforcement Learning</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0a0a;
+      --surface: #111111;
+      --border:  #222222;
+      --accent:  #3b82f6;
+      --green:   #22c55e;
+      --red:     #ef4444;
+      --yellow:  #eab308;
+      --text:    #e5e7eb;
+      --muted:   #6b7280;
+      --mono:    'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+    }
+    .nav-brand {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.8rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-gh {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      border: 1px solid var(--accent);
+      padding: 4px 12px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .nav-gh:hover { background: rgba(59,130,246,0.15); }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    section {
+      padding: 4rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    section:last-of-type { border-bottom: none; }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+    p { color: var(--muted); line-height: 1.7; }
+    p + p { margin-top: 0.75rem; }
+
+    /* ── Hero ── */
+    #hero {
+      padding: 6rem 0 4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      background: rgba(59,130,246,0.08);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 4px;
+      padding: 3px 10px;
+      margin-bottom: 1.2rem;
+    }
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 620px;
+      margin-top: 0.8rem;
+    }
+    .stat-row {
+      display: flex;
+      gap: 2.5rem;
+      margin-top: 2.5rem;
+      flex-wrap: wrap;
+    }
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── Corridor animation ── */
+    .corridor-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+    .corridor-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .agent-track {
+      position: relative;
+      height: 36px;
+      background: #0f1117;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 0.6rem;
+      border: 1px solid var(--border);
+    }
+    .track-fill {
+      position: absolute;
+      top: 0; left: 0; height: 100%;
+      border-radius: 4px;
+      transition: width 3.5s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+    }
+    .track-fill.trained { background: linear-gradient(90deg, #1d4ed8, #3b82f6); }
+    .track-fill.baseline { background: linear-gradient(90deg, #7f1d1d, #ef4444); }
+    .track-agent {
+      position: absolute;
+      right: 0; top: 50%;
+      transform: translateY(-50%);
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px;
+    }
+    .goal-marker {
+      position: absolute;
+      right: 2px; top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--green);
+      font-weight: 600;
+    }
+    .track-row {
+      position: relative;
+      margin-bottom: 0.5rem;
+    }
+    .track-name {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .pct-label {
+      position: absolute;
+      right: -46px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 42px;
+      text-align: right;
+    }
+
+    /* ── Results grid ── */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+    .result-card {
+      background: var(--surface);
+      padding: 1.4rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .result-card .val {
+      font-family: var(--mono);
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .result-card .lbl {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* ── Chart ── */
+    .chart-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+      position: relative;
+      height: 320px;
+    }
+
+    /* ── Curriculum table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 13px;
+      margin-top: 1rem;
+    }
+    th {
+      text-align: left;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+    }
+    td {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .tag.pos { background: rgba(34,197,94,0.12); color: var(--green); }
+    .tag.neg { background: rgba(239,68,68,0.12); color: var(--red); }
+    .tag.stage { background: rgba(59,130,246,0.1); color: var(--accent); }
+
+    /* ── Sensors ── */
+    .obs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 1rem;
+    }
+    .obs-row {
+      background: var(--surface);
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 0.9rem 1.2rem;
+    }
+    .obs-idx {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      min-width: 52px;
+    }
+    .obs-name {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      flex: 1;
+    }
+    .obs-dim {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-stack {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .footer-stack span::before {
+      content: '·  ';
+      color: var(--border);
+    }
+    .footer-stack span:first-child::before { content: ''; }
+    .footer-links {
+      display: flex;
+      gap: 1.2rem;
+    }
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .footer-links a:hover { color: var(--text); }
+
+    @media (max-width: 640px) {
+      h1 { font-size: 1.7rem; }
+      .results-grid { grid-template-columns: repeat(2, 1fr); }
+      .obs-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <span class="nav-brand">DEBRIS</span>
+  <ul class="nav-links">
+    <li><a href="#results">Results</a></li>
+    <li><a href="#curriculum">Curriculum</a></li>
+    <li><a href="#sensors">Sensors</a></li>
+  </ul>
+  <a class="nav-gh" href="https://github.com/hud-evals/worldsim-template" target="_blank">GitHub ↗</a>
+</nav>
+
+<!-- Hero -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-tag">HUD / YC RSI Hackathon</div>
+    <h1>DEBRIS</h1>
+    <p class="hero-sub">
+      Disaster Environment for Blind-assistive Reinforcement learning &amp; Intelligent Systems.
+      A navigation policy trained entirely from physics reward signals — no human demonstrations —
+      to traverse a collapsing corridor under falling debris, crumbling ceilings, and fire hazard zones.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat">
+        <span class="stat-value" style="color:var(--green)">10/10</span>
+        <span class="stat-label">seeds succeeded</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">4.3M</span>
+        <span class="stat-label">training steps</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">514</span>
+        <span class="stat-label">fps on A100</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" style="color:var(--accent)">1</span>
+        <span class="stat-label">avg collisions</span>
+      </div>
+    </div>
+
+    <!-- Corridor animation -->
+    <div class="corridor-wrap">
+      <div class="corridor-label-row">
+        <span>START  x=−12.0</span>
+        <span>CORRIDOR  28 m</span>
+        <span>GOAL  x=+13.7</span>
+      </div>
+
+      <div class="track-row" style="padding-right:56px">
+        <div class="track-name">TRAINED POLICY</div>
+        <div class="agent-track">
+          <div class="track-fill trained" id="bar-trained"></div>
+          <div class="goal-marker">✓</div>
+        </div>
+        <span class="pct-label" id="pct-trained" style="color:var(--green)">0%</span>
+      </div>
+
+      <div class="track-row" style="padding-right:56px; margin-top:0.8rem">
+        <div class="track-name">RANDOM BASELINE</div>
+        <div class="agent-track">
+          <div class="track-fill baseline" id="bar-baseline"></div>
+        </div>
+        <span class="pct-label" id="pct-baseline" style="color:var(--red)">0%</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Results -->
+<section id="results">
+  <div class="container">
+    <h2>Eval Results</h2>
+
+    <div class="results-grid">
+      <div class="result-card">
+        <span class="val" style="color:var(--green)">97%</span>
+        <span class="lbl">Corridor Covered</span>
+      </div>
+      <div class="result-card">
+        <span class="val" style="color:var(--accent)">1.0</span>
+        <span class="lbl">Avg Collisions</span>
+      </div>
+      <div class="result-card">
+        <span class="val">4.3M</span>
+        <span class="lbl">Training Steps</span>
+      </div>
+      <div class="result-card">
+        <span class="val">514</span>
+        <span class="lbl">Steps/sec A100</span>
+      </div>
+    </div>
+
+    <div style="margin-top:2.5rem">
+      <h3>full_chaos Reward Curve</h3>
+      <p>Policy reward over the final curriculum stage (full_chaos): 5 debris bodies, 5 scatter shrapnel, ceiling crumble, fire zones, and wall collapse all active simultaneously.</p>
+      <div class="chart-wrap">
+        <canvas id="rewardChart"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Curriculum -->
+<section id="curriculum">
+  <div class="container">
+    <h2>Curriculum</h2>
+    <p>Four progressive stages, each loading weights from the previous stage. Hazards are introduced incrementally so the policy first learns navigation, then avoidance.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Name</th>
+          <th>Primary Debris</th>
+          <th>Scatter</th>
+          <th>Crumble</th>
+          <th>Steps</th>
+          <th>End Reward</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag stage">1</span></td>
+          <td>static_only</td>
+          <td>0</td>
+          <td>0</td>
+          <td>—</td>
+          <td>600k</td>
+          <td><span class="tag pos">+8.5</span></td>
+        </tr>
+        <tr>
+          <td><span class="tag stage">2</span></td>
+          <td>debris_only</td>
+          <td>3</td>
+          <td>0</td>
+          <td>—</td>
+          <td>1.0M</td>
+          <td><span class="tag neg">−2.8</span></td>
+        </tr>
+        <tr>
+          <td><span class="tag stage">3</span></td>
+          <td>debris_and_scatter</td>
+          <td>5</td>
+          <td>3</td>
+          <td>—</td>
+          <td>1.2M</td>
+          <td><span class="tag pos">+0.17</span></td>
+        </tr>
+        <tr>
+          <td><span class="tag stage">4</span></td>
+          <td>full_chaos</td>
+          <td>5</td>
+          <td>5</td>
+          <td>✓</td>
+          <td>1.5M</td>
+          <td><span class="tag neg">−10.9</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:2rem">
+      <p>
+        <strong style="color:var(--text)">Physics method:</strong>
+        MuJoCo weld equality constraints are released at runtime (<code style="font-family:var(--mono);color:var(--accent);font-size:12px">eq_active[i]=0</code>), causing 180–420 kg concrete slabs to fall under gravity. 9 weld constraints total, triggered by elapsed steps or agent x-position.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Sensors -->
+<section id="sensors">
+  <div class="container">
+    <h2>Observation Space · 71-dim</h2>
+    <p>No RGB camera. Policy navigates purely from position, velocity, and proximity sensors — analogous to LIDAR/sonar. Directly applicable to assistive devices for visually impaired navigation.</p>
+
+    <div class="obs-grid">
+      <div class="obs-row">
+        <span class="obs-idx">[0:3]</span>
+        <span class="obs-name">agent_pos</span>
+        <span class="obs-dim">3D · xyz world frame</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[3:6]</span>
+        <span class="obs-name">agent_vel</span>
+        <span class="obs-dim">3D · vx vy vz</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[6:9]</span>
+        <span class="obs-name">agent_facing</span>
+        <span class="obs-dim">3D · forward unit vector</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[9:12]</span>
+        <span class="obs-name">goal_relative_pos</span>
+        <span class="obs-dim">3D · goal − agent</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[12:27]</span>
+        <span class="obs-name">primary_debris_pos</span>
+        <span class="obs-dim">15D · 5 bodies × xyz</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[27:32]</span>
+        <span class="obs-name">primary_debris_vz</span>
+        <span class="obs-dim">5D · fall velocity</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[32:47]</span>
+        <span class="obs-name">scatter_debris_pos</span>
+        <span class="obs-dim">15D · 5 bodies × xyz</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[47:52]</span>
+        <span class="obs-name">scatter_debris_vz</span>
+        <span class="obs-dim">5D · fall velocity</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[52:57]</span>
+        <span class="obs-name">primary_debris_vx</span>
+        <span class="obs-dim">5D · lateral x velocity</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[57:62]</span>
+        <span class="obs-name">primary_debris_vy</span>
+        <span class="obs-dim">5D · lateral y velocity</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[62]</span>
+        <span class="obs-name">time_remaining_norm</span>
+        <span class="obs-dim">1D · 1.0=start 0.0=end</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[63]</span>
+        <span class="obs-name">heading_to_goal_angle</span>
+        <span class="obs-dim">1D · radians, 0=on target</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[64:69]</span>
+        <span class="obs-name">ceil_broken_flags</span>
+        <span class="obs-dim">5D · tile weld states</span>
+      </div>
+      <div class="obs-row">
+        <span class="obs-idx">[69]</span>
+        <span class="obs-name">fire_zone_flag</span>
+        <span class="obs-dim">1D · proximity binary</span>
+      </div>
+      <div class="obs-row" style="grid-column: 1 / -1">
+        <span class="obs-idx">[70]</span>
+        <span class="obs-name">collision_flag</span>
+        <span class="obs-dim">1D · contact force threshold</span>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem">
+      <p><strong style="color:var(--text)">Action space · 3-dim:</strong>
+        <span style="font-family:var(--mono);color:var(--accent);font-size:12px"> vx ∈ [−1.5, 1.5] m/s · vy ∈ [−1.0, 1.0] m/s · ωz ∈ [−1.0, 1.0] rad/s</span>
+      </p>
+      <p style="margin-top:0.5rem">
+        Policy outputs in [−1, 1] via tanh activation, then scaled to physical ranges.
+        MLP actor-critic: Linear(71→256)→LayerNorm→Tanh×2, PPO clip=0.2, GAE λ=0.95.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-stack">
+        <span>HUD / YC RSI Hackathon 2026</span>
+        <span>PPO + MuJoCo physics</span>
+        <span>Modal A100 GPU</span>
+        <span>18-hour build</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/hud-evals/worldsim-template" target="_blank">GitHub ↗</a>
+        <a href="https://hud.ai" target="_blank">HUD ↗</a>
+        <a href="https://modal.com" target="_blank">Modal ↗</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── Corridor animation ──
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const barTrained  = document.getElementById('bar-trained');
+      const barBaseline = document.getElementById('bar-baseline');
+      const pctTrained  = document.getElementById('pct-trained');
+      const pctBaseline = document.getElementById('pct-baseline');
+
+      barTrained.style.width  = '97%';
+      barBaseline.style.width = '8%';
+
+      // Animate percentage counter
+      const animPct = (el, target, color) => {
+        let current = 0;
+        const step = target / 60;
+        const id = setInterval(() => {
+          current = Math.min(current + step, target);
+          el.textContent = Math.round(current) + '%';
+          if (current >= target) clearInterval(id);
+        }, 60);
+      };
+
+      animPct(pctTrained,  97, '#22c55e');
+      animPct(pctBaseline, 8,  '#ef4444');
+    }, 400);
+  });
+
+  // ── Reward chart ──
+  const steps   = [65, 131, 196, 262, 328, 393, 458, 507, 524, 557, 590, 606];
+  const rewards = [-97.1, -48.5, -32.7, -3.1, -14.2, -13.9, -11.0, -10.0, -1.9, -1.9, 0.14, 0.14];
+
+  const ctx = document.getElementById('rewardChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: steps.map(s => s + 'k'),
+      datasets: [{
+        label: 'Episode Reward (full_chaos)',
+        data: rewards,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.08)',
+        borderWidth: 2,
+        pointBackgroundColor: rewards.map(r => r > 0 ? '#22c55e' : '#3b82f6'),
+        pointBorderColor:     rewards.map(r => r > 0 ? '#22c55e' : '#3b82f6'),
+        pointRadius: 4,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: '#6b7280',
+            font: { family: "'JetBrains Mono', monospace", size: 11 }
+          }
+        },
+        tooltip: {
+          backgroundColor: '#111111',
+          borderColor: '#222222',
+          borderWidth: 1,
+          titleColor: '#e5e7eb',
+          bodyColor: '#6b7280',
+          titleFont: { family: "'JetBrains Mono', monospace" },
+          bodyFont:  { family: "'JetBrains Mono', monospace", size: 11 },
+          callbacks: {
+            label: ctx => ` reward: ${ctx.parsed.y > 0 ? '+' : ''}${ctx.parsed.y}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid:  { color: '#1a1a1a' },
+          ticks: { color: '#6b7280', font: { family: "'JetBrains Mono', monospace", size: 10 } },
+          title: { display: true, text: 'Training Steps', color: '#6b7280',
+                   font: { family: "'JetBrains Mono', monospace", size: 10 } }
+        },
+        y: {
+          grid:  { color: '#1a1a1a' },
+          ticks: { color: '#6b7280', font: { family: "'JetBrains Mono', monospace", size: 10 } },
+          title: { display: true, text: 'Mean Episode Reward (50-ep window)', color: '#6b7280',
+                   font: { family: "'JetBrains Mono', monospace", size: 10 } }
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>
